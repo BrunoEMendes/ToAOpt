@@ -1,0 +1,13 @@
+#env
+env
+env/
+env/*
+
+#pycache
+__pycache__
+__pycache__/
+__pycache__/*
+
+
+
+
