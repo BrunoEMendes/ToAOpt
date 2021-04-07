@@ -2,12 +2,24 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from google.protobuf.json_format import Parse
 from chirpstack_api.as_pb import integration
+from functools import partial
+
+from mqttclient import MQTTClient
+from functools import partial
+
 
 
 class Handler(BaseHTTPRequestHandler):
     # True -  JSON marshaler
     # False - Protobuf marshaler (binary)
     json = True
+
+    def __init__(self, mqtt_broker_ip, mqtt_broker_port, topic, *args, **kwargs):
+        self.mqtt_broker_ip = mqtt_broker_ip
+        self.mqtt_broker_port = mqtt_broker_port
+        self.topic = topic
+        super().__init__(*args, **kwargs)
+
 
     def do_POST(self):
         self.send_response(200)
@@ -27,7 +39,22 @@ class Handler(BaseHTTPRequestHandler):
     def up(self, body):
         up = self.unmarshal(body, integration.UplinkEvent())
         print("Uplink received from: %s with payload: %s" % (up.dev_eui.hex(), up.data.hex()))
-        
+
+        # print(self.mqtt_broker_ip, self.mqtt_broker_port, self.topic)
+        mqtt = MQTTClient(self.mqtt_broker_ip, self.mqtt_broker_port, self.topic)
+        message = {
+            "dev_eui"  : up.dev_eui.hex(), 
+            "crc"      : str(up.tx_info.lora_modulation_info.code_rate), 
+            "sf"       : int(up.tx_info.lora_modulation_info.spreading_factor),
+            "rssi"     : int(up.rx_info[0].rssi),
+            "channel"  : int(up.rx_info[0].channel),
+            "bw"       : int(up.tx_info.lora_modulation_info.bandwidth),
+            "f_port"   : int(up.f_port),
+            "lora_snr" : str(up.rx_info[0].lora_snr)
+        }
+        print(message)
+        mqtt.stat_pub(message)
+
         # add_up(dev_eui  = up.dev_eui, 
         #        crc      = up.tx_info.lora_modulation_info.code_rate, 
         #        sf       = int(up.tx_info.lora_modulation_info.spreading_factor),
@@ -47,10 +74,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class HandlerServer():
-    def __init__(self, server, port):
+    def __init__(self, server, port, mqtt_broker_server, mqtt_broker_port, topic):
         self.server = server
         self.port = port
+        self.mqtt_broker_server = mqtt_broker_server
+        self.mqtt_broker_port = mqtt_broker_port    
+        self.topic = topic
 
     def start_server(self):
-        httpd = HTTPServer(('', self.port), Handler)
+        handler = partial(Handler, self.mqtt_broker_server, self.mqtt_broker_port, self.topic)
+        httpd = HTTPServer(('', self.port), handler)
         httpd.serve_forever()

@@ -1,0 +1,17 @@
+{
+    "server":
+    {
+        "ip": "",
+        "port": 8000,
+        "topic": "RLagent_read"
+    },
+    "mqtt_broker":{
+        "ip":"192.168.1.9",
+        "port": 1883,
+        "topic": "RLagent_dw"
+    },
+    "chirpstack_api":{
+        "server":"http://192.168.1.9:8080",
+        "key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5X2lkIjoiMTkyNTBhZDgtZDdlNC00Yjg4LWJjNzItOTI4NjM4YjNjYzY1IiwiYXVkIjoiYXMiLCJpc3MiOiJhcyIsIm5iZiI6MTYxNzc1MDM3NCwic3ViIjoiYXBpX2tleSJ9.8nwVRrGx4UFXQTaWjBtSAIVCEGdOerYXrERIBGyEnJA"
+    }
+}
