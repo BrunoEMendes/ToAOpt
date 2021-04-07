@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "cayenne-lpp": "^1.0.2",
+    "packet-forwarder-json-builder": "^2.0.6"
+  }
+}

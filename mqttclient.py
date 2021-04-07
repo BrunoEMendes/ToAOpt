@@ -22,7 +22,7 @@ class MQTTClient():
 
         object_json = self.__decode(msg.payload)
 
-        print(object_json)
+        # print(object_json)
 
         '''
         {
@@ -41,12 +41,13 @@ class MQTTClient():
         }
         '''
         print('--------------------------------------------------')
-        print(self.__encode(object_json['opt']))
+        # print(self.__encode(object_json['opt']))
+        dev_eui = object_json['device']['dev_eui']
         msg = {
                 "deviceQueueItem": {
                     "confirmed": True,
                     "data": self.__encode(object_json['opt']).decode('ascii'),
-                    "devEUI": object_json['device']['dev_eui'],
+                    "devEUI": dev_eui,
                     "fCnt": 0,
                     "fPort": object_json['device']['fPort']
                 }
@@ -56,7 +57,7 @@ class MQTTClient():
         
         # todo
         # send msg
-        api_url = f'{self.chirpstack_api}/api/devices/fdaffdfaadbfadfa/queue'
+        api_url = f'{self.chirpstack_api}/api/devices/{dev_eui}/queue'
         # api_url = 'http://192.168.1.9:8080/api/devices/fdaffdfaadbfadfa/queue'
 
         req = requests.post(api_url, headers= self.__headers, data=json.dumps(msg))
