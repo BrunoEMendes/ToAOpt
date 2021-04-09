@@ -12,19 +12,22 @@ class MQTTClient():
         self.topic = topic
 
 
-
-
+    # private functions
     def __connect_msg(self, client, userdata, flags, rc):
+        '''
+        message when mqtt connects to broker successfully
+        '''
         print(f'Subscribed: {self.topic} at {self.mqtt_broker_ip}:{self.mqtt_broker_port}')
 
     def __message_received(self, client, userdata, msg):
-        print(msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
-
-        object_json = self.__decode(msg.payload)
-
-        # print(object_json)
-
         '''
+        callback function:
+            -   this function is called whenever it successfully reads a message
+                from the broker.
+            -   will convert the example payload received to a POST message payload 
+                and send it to chirpstack
+   
+        Example payload received
         {
             "device":
             {
@@ -39,7 +42,22 @@ class MQTTClient():
                 "snr": "21"
             }
         }
+
+        Chirpstack Payload
+                msg = {
+                "deviceQueueItem": {
+                    "confirmed": True,
+                    "data": string,
+                    "devEUI": dev_eui,
+                    "fCnt": 0,
+                    "fPort": port
+                }
+        }
         '''
+        print(msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
+
+        object_json = self.__decode(msg.payload)
+ 
         print('--------------------------------------------------')
         # print(self.__encode(object_json['opt']))
         dev_eui = object_json['device']['dev_eui']
@@ -53,17 +71,14 @@ class MQTTClient():
                 }
         }
 
-        
-        
-        # todo
-        # send msg
         api_url = f'{self.chirpstack_api}/api/devices/{dev_eui}/queue'
-        # api_url = 'http://192.168.1.9:8080/api/devices/fdaffdfaadbfadfa/queue'
-
         req = requests.post(api_url, headers= self.__headers, data=json.dumps(msg))
-        print(req)    
+        print(req)   # 200 - ok / 404 - error / etc 
 
     def __connect(self):
+        '''
+        creates a new MQTT CLIENT
+        '''
         client = paho.Client()
         client.on_connect = self.__connect_msg
 
@@ -74,23 +89,43 @@ class MQTTClient():
         return client
 
     def __on_publish(self, client, userdata, result):
+        '''
+        Callback function that is called whenever the data is published
+        '''
         print("datapublished")
 
     def __decode(self, message):
+        '''
+        decodes Base64 stuff and converts to json object
+        '''
         decoded = base64.b64decode(message).decode('ascii')
         return json.loads(decoded)
 
     def __encode(self, message):
+        '''
+        convers json object to base64
+        '''
         return base64.b64encode(json.dumps(message).encode('ascii'))
 
-    def stat_pub(self, message):
+
+    #public functions
+
+    def start_pub(self, message):
+        '''
+        publishes a message
+        '''
         client = self.__connect()
         ret = client.publish(self.topic, self.__encode(message))
 
 
     def start_sub(self, chirpstack_api, chirpstack_api_key):
+        '''
+        creates indefinitive time subscriber client to MQTT broker
+        '''
+
         self.chirpstack_api = chirpstack_api
         self.__headers = {'Accept': 'application/json', 'Grpc-Metadata-Authorization': f'Bearer {chirpstack_api_key}'}
+        
         client = self.__connect()
         client.subscribe(self.topic)
         client.loop_forever()
