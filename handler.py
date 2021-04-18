@@ -32,7 +32,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         query_args = parse_qs(urlparse(self.path).query)
 
-
+        
         content_len = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_len)
 
@@ -57,13 +57,15 @@ class Handler(BaseHTTPRequestHandler):
             "dev_eui"  : up.dev_eui.hex(), 
             "crc"      : str(up.tx_info.lora_modulation_info.code_rate), 
             "sf"       : int(up.tx_info.lora_modulation_info.spreading_factor),
-            "rssi"     : int(up.rx_info[0].rssi),
-            "channel"  : int(up.rx_info[0].channel),
+            # "rssi"     : int(up.rx_info[0].rssi),
+            # "channel"  : int(up.rx_info[0].channel),
             "bw"       : int(up.tx_info.lora_modulation_info.bandwidth),
             "f_port"   : int(up.f_port),
             "lora_snr" : str(up.rx_info[0].lora_snr)
         }
+        print('\nMQTT Publish Message:')
         print(message)
+        print()
         mqtt.start_pub(message)
 
     def unmarshal(self, body, pl):
@@ -84,6 +86,7 @@ class HandlerServer():
         self.mqtt_broker_server = mqtt_broker_server
         self.mqtt_broker_port = mqtt_broker_port    
         self.topic = topic
+        print(f'Handler waiting for Chirpstack API Post messages on port {self.port}')
 
     def start_server(self):
         handler = partial(Handler, self.mqtt_broker_server, self.mqtt_broker_port, self.topic)

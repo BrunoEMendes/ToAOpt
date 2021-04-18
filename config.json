@@ -3,12 +3,12 @@
     {
         "ip": "",
         "port": 8000,
-        "topic": "RLagent_read"
+        "topic": "Topic A"
     },
     "mqtt_broker":{
         "ip":"192.168.1.9",
         "port": 1883,
-        "topic": "RLagent_dw"
+        "topic": "Topic B"
     },
     "chirpstack_api":{
         "server":"http://192.168.1.9:8080",
